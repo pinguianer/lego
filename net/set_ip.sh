@@ -32,6 +32,16 @@ set_ip() { #{{{
 	OS="$(get_OS)"
 	echo "OS TAG : $OS"
 	local Gateway=$(echo $IP | sed "s/[0-9]\{1,3\}\$/1/g")
+	case $OS in
+		Ubuntu )
+			NetConfigFile="/etc/netplan/01-network-manager-all.yaml"
+		;;
+		debian )
+		;;
+		freebsd )
+		;;
+        esac
+
 	DeviceArray=(`/usr/sbin/ip link show | awk -F ':' '{print $2}' | grep "^ [a-Z]" | sed "s/ //g" | sed "/lo/d"`)
 	if [[ ${#DeviceArray[*]} == 1 ]]; then
 		Device=$DeviceArray
@@ -41,7 +51,19 @@ set_ip() { #{{{
 		read Device
 		echo $Device
 	fi
-
+	
+	cat << EOF > $NetConfigFile
+network:
+  ethernets:
+    $Device:
+      addresses:
+      - $IP/24
+      gateway4: $Gateway
+      nameservers:
+        addresses:
+        - $Gateway
+  version: 2
+EOF
 
 } #}}}
 
